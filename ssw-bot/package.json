@@ -1,0 +1,11 @@
+{
+  "name": "grupolobo-ssw-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server-http.mjs",
+    "local": "node rodar-local-http.mjs",
+    "dockerfile": "node gerar-dockerfile.mjs"
+  }
+}

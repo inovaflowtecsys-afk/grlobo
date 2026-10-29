@@ -1,0 +1,123 @@
+Plataforma de Gestão Logística Integrada ao SSW
+Sistema desenvolvido para integrar os dados do SSW e transformar informações operacionais em indicadores, controles e decisões mais rápidas para empresas de transporte e logística.
+A plataforma realiza a atualização dos conhecimentos, entregas, romaneios e ocorrências, centralizando a operação em um painel único.
+Principais módulos
+- Dashboard executivo
+  - Indicadores operacionais e financeiros
+  - Conhecimentos emitidos, entregues e em trânsito
+  - Acompanhamento de atrasos
+  - Gráficos de desempenho e evolução mensal
+- DPE — Desempenho de Prazo de Entrega
+  - Cálculo automático do DPE
+  - Comparativo entre prazo previsto e entrega realizada
+  - Regras para agendamentos
+  - Exclusão de conhecimentos complementares, substituições e ocorrências específicas
+  - Análise por município e veículo
+- Gestão de entregas
+  - Entregas realizadas, pendentes e com insucesso
+  - Lista de conhecimentos atrasados
+  - Filtros por CTRC, NF, cidade, placa e ocorrência
+  - Identificação da ocorrência atual
+- Agendamentos
+  - Entregas aguardando agendamento
+  - Entregas agendadas
+  - Número da NF
+  - Romaneio, data, placa e motorista
+  - Situação e ocorrência atualizadas
+- Pendências operacionais
+  - Controle de entregas com insucesso
+  - Motivo da pendência
+  - Romaneio, veículo e motorista responsáveis
+  - Acompanhamento das ocorrências operacionais
+- Romaneios e veículos
+  - Romaneios em aberto e encerrados
+  - Quantidade de entregas por romaneio
+  - Veículos em operação
+  - Motoristas vinculados
+  - Entregas pendentes e realizadas
+- Conhecimentos de transporte
+  - Consulta detalhada dos CTRCs
+  - Dados do remetente, destinatário e pagador
+  - Notas fiscais vinculadas
+  - Histórico de ocorrências
+  - Última atualização do conhecimento
+- Faturamento
+  - Frete total
+  - Ticket médio por CTRC
+  - ICMS e ISS
+  - Frete cancelado
+  - Ranking por cliente, remetente e UF
+- Integração automática com o SSW
+  - Importação periódica do relatório 455
+  - Atualização dos conhecimentos e ocorrências
+  - Integração com dados de romaneios
+  - Histórico das cargas processadas
+  - Base centralizada para relatórios e indicadores
+Benefícios
+- Mais controle sobre a operação;
+- Redução de consultas manuais no SSW;
+- Informações atualizadas em um único ambiente;
+- Identificação rápida de atrasos e pendências;
+- Indicadores confiáveis para a gestão;
+- Maior produtividade das equipes operacionais e administrativas.Plataforma de Gestão Logística Integrada ao SSW
+Sistema desenvolvido para integrar os dados do SSW e transformar informações operacionais em indicadores, controles e decisões mais rápidas para empresas de transporte e logística.
+A plataforma realiza a atualização dos conhecimentos, entregas, romaneios e ocorrências, centralizando a operação em um painel único.
+Principais módulos
+- Dashboard executivo
+  - Indicadores operacionais e financeiros
+  - Conhecimentos emitidos, entregues e em trânsito
+  - Acompanhamento de atrasos
+  - Gráficos de desempenho e evolução mensal
+- DPE — Desempenho de Prazo de Entrega
+  - Cálculo automático do DPE
+  - Comparativo entre prazo previsto e entrega realizada
+  - Regras para agendamentos
+  - Exclusão de conhecimentos complementares, substituições e ocorrências específicas
+  - Análise por município e veículo
+- Gestão de entregas
+  - Entregas realizadas, pendentes e com insucesso
+  - Lista de conhecimentos atrasados
+  - Filtros por CTRC, NF, cidade, placa e ocorrência
+  - Identificação da ocorrência atual
+- Agendamentos
+  - Entregas aguardando agendamento
+  - Entregas agendadas
+  - Número da NF
+  - Romaneio, data, placa e motorista
+  - Situação e ocorrência atualizadas
+- Pendências operacionais
+  - Controle de entregas com insucesso
+  - Motivo da pendência
+  - Romaneio, veículo e motorista responsáveis
+  - Acompanhamento das ocorrências operacionais
+- Romaneios e veículos
+  - Romaneios em aberto e encerrados
+  - Quantidade de entregas por romaneio
+  - Veículos em operação
+  - Motoristas vinculados
+  - Entregas pendentes e realizadas
+- Conhecimentos de transporte
+  - Consulta detalhada dos CTRCs
+  - Dados do remetente, destinatário e pagador
+  - Notas fiscais vinculadas
+  - Histórico de ocorrências
+  - Última atualização do conhecimento
+- Faturamento
+  - Frete total
+  - Ticket médio por CTRC
+  - ICMS e ISS
+  - Frete cancelado
+  - Ranking por cliente, remetente e UF
+- Integração automática com o SSW
+  - Importação periódica do relatório 455
+  - Atualização dos conhecimentos e ocorrências
+  - Integração com dados de romaneios
+  - Histórico das cargas processadas
+  - Base centralizada para relatórios e indicadores
+Benefícios
+- Mais controle sobre a operação;
+- Redução de consultas manuais no SSW;
+- Informações atualizadas em um único ambiente;
+- Identificação rápida de atrasos e pendências;
+- Indicadores confiáveis para a gestão;
+- Maior produtividade das equipes operacionais e administrativas.

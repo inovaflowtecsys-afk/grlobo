@@ -1,0 +1,265 @@
+{
+  "name": "GrupoLobo - SSW financeiro -> Supabase",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 6,12,15,17,19 * * *"
+            }
+          ]
+        }
+      },
+      "id": "5427db79-fc41-4f0c-8ff6-0faec38bd3e1",
+      "name": "GrupoLobo - Financeiro 06h20 12h20 15h20 17h20 19h20",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { rel: 'a-faturar' } },\n  { json: { rel: 'fat-emissao' } },\n  { json: { rel: 'fat-pendentes' } },\n  { json: { rel: 'fat-liquidadas' } },\n  { json: { rel: 'liquidados' } },\n];"
+      },
+      "id": "202dc8a5-568c-4744-a0c4-782558180818",
+      "name": "Relatorios",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "13be0ef7-daa1-49a4-a8b5-3bdc67181654",
+      "name": "Um por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://inovaflowtec_grupolobo-ssw-bot/relatorio",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "rel",
+              "value": "={{ $json.rel }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 360000
+        }
+      },
+      "id": "104a80d8-e438-4c8a-b1aa-4a25410fee1a",
+      "name": "GrupoLobo - Gerar relatorio (bot SSW)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        16
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "GrupoLobo - Bot SSW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7f1746e1-8e58-4607-a8a0-5222f608bd3e",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5559914f-c929-4a01-ab75-ae5cd67502c7",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://xggknkcipdvksfvlvtmh.supabase.co/functions/v1/sync-ssw-financeiro",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "dominio",
+              "value": "grupolobo"
+            },
+            {
+              "name": "tipo",
+              "value": "={{ $json.headers['x-relatorio'].startsWith('fat-') ? 'faturas' : ($json.headers['x-relatorio'] === 'liquidados' ? 'liquidados' : 'a_faturar') }}"
+            },
+            {
+              "name": "sequencia",
+              "value": "={{ $json.headers['x-relatorio'] }} {{ $json.headers['x-periodo'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "4f951fdf-842b-4754-9612-8fc9a4f9a622",
+      "name": "GrupoLobo - Enviar para Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        16
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "name": "GrupoLobo - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## GRUPO LOBO\nFluxo do **Grupo Lobo** (dominio `grupolobo`), separado da Macklog.\n- Bot: grupolobo-ssw-bot\n- Banco: Supabase GrupoLobo (xggknkcipdvksfvlvtmh)\n- Credenciais: GrupoLobo - Bot SSW / GrupoLobo - Supabase",
+        "height": 160,
+        "width": 360,
+        "color": 4
+      },
+      "id": "7d7e013b-71f2-42a1-985b-b3f917f130f5",
+      "name": "Identificacao GrupoLobo",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -220
+      ]
+    }
+  ],
+  "connections": {
+    "GrupoLobo - Financeiro 06h20 12h20 15h20 17h20 19h20": {
+      "main": [
+        [
+          {
+            "node": "Relatorios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Relatorios": {
+      "main": [
+        [
+          {
+            "node": "Um por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Um por vez": {
+      "main": [
+        [],
+        [
+          {
+            "node": "GrupoLobo - Gerar relatorio (bot SSW)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GrupoLobo - Gerar relatorio (bot SSW)": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "GrupoLobo - Enviar para Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Um por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GrupoLobo - Enviar para Supabase": {
+      "main": [
+        [
+          {
+            "node": "Um por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo"
+  }
+}

@@ -1,0 +1,9 @@
+.env
+docs/ssh.txt
+node_modules/
+*.log
+cfg-page.html
+cfg.png
+backup/
+supabase/.temp/
+*.tsbuildinfo

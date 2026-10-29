@@ -1,0 +1,380 @@
+{
+  "name": "grupolobo - SSW 455 carga historica",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ebea2987-5bf9-41b2-8b61-2521bee5b1cb",
+      "name": "Iniciar carga historica",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== CONFIGURACAO =====\nconst MES_INICIAL = '';      // 'AAAA-MM' para retomar de um mes; vazio = mes atual\nconst MAX_MESES = 6;         // meses por execucao (protege a memoria da VPS)\nconst LIMITE_VAZIOS = 3;     // para apos N meses seguidos sem CTRC (= achou o inicio)\nconst MES_MINIMO = '2010-01';\nconst UNIDADE = 'SJP';       // unidade do formulario da 455 (campo f2)\n// =========================\nconst pad = (n) => String(n).padStart(2, '0');\nconst ent = $input.first().json;\nconst hojeBR = new Date(Date.now() - 3 * 3600e3);\nlet ano, mes, vazios = 0, feitos = 0, historico = [];\nif (ent.ano) ({ ano, mes, vazios, feitos, historico } = ent);\nelse if (MES_INICIAL) { [ano, mes] = MES_INICIAL.split('-').map(Number); }\nelse { ano = hojeBR.getUTCFullYear(); mes = hojeBR.getUTCMonth() + 1; }\nconst ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();\nconst atual = ano === hojeBR.getUTCFullYear() && mes === hojeBR.getUTCMonth() + 1;\nconst yy = String(ano).slice(2);\nconst f11 = `01${pad(mes)}${yy}`, f12 = `${pad(atual ? hojeBR.getUTCDate() : ultimo)}${pad(mes)}${yy}`;\nreturn [{ json: { ano, mes, rotulo: `${ano}-${pad(mes)}`, vazios, feitos, historico, f11, f12,\n  campos: JSON.stringify({ f2: UNIDADE, f11, f12 }), MAX_MESES, LIMITE_VAZIOS, MES_MINIMO } }];"
+      },
+      "id": "aebbb99f-d7df-4d3d-9cc9-fb6a4dd7ae56",
+      "name": "Controle",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://inovaflowtec_grupolobo-ssw-bot/gerar-455",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "arq",
+              "value": "E"
+            },
+            {
+              "name": "compl",
+              "value": "ABF"
+            },
+            {
+              "name": "campos",
+              "value": "={{ $json.campos }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "e5b13788-14a9-42f2-af4c-19a6e4cc9623",
+      "name": "Gerar 455 do mes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "GrupoLobo - Bot SSW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b0613e9-7c03-4ebc-9a97-226012c0c24f",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1155fa0-ad87-42f8-bc16-ebd1ba4582f0",
+      "name": "Veio arquivo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://xggknkcipdvksfvlvtmh.supabase.co/functions/v1/sync-ssw-455",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "dominio",
+              "value": "grupolobo"
+            },
+            {
+              "name": "sequencia",
+              "value": "={{ $json.headers['x-sequencia'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "a130a909-6069-4334-b881-905e6e6ace6c",
+      "name": "Enviar para Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        -100
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "name": "GrupoLobo - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1aafe5dc-5db6-4da2-a4af-f69e2d2d53bd",
+              "name": "linhas",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "f10bd503-f72a-422a-b285-2613544f8966",
+              "name": "erro",
+              "value": "={{ 'bot respondeu ' + $json.statusCode }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b55f6959-83b8-4c7b-b247-af49275eb843",
+      "name": "Sem arquivo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const pad = (n) => String(n).padStart(2, '0');\nconst c = $('Controle').item.json;\nconst r = $json;\nconst linhas = Number(r.linhas || 0);\nconst erro = r.error || r.erro || null;\nconst vazios = linhas > 0 ? 0 : c.vazios + 1;\nconst historico = [...c.historico, { mes: c.rotulo, periodo: `${c.f11}-${c.f12}`, linhas, novos: r.novos || 0, atualizados: r.atualizados || 0, erro }];\nlet ano = c.ano, mes = c.mes - 1; if (mes === 0) { mes = 12; ano--; }\nconst feitos = c.feitos + 1;\nconst proximo = `${ano}-${pad(mes)}`;\nconst fim_dados = vazios >= c.LIMITE_VAZIOS || proximo < c.MES_MINIMO;\nconst parar = fim_dados || feitos >= c.MAX_MESES;\nreturn { json: { ano, mes, vazios, feitos, historico, parar, fim_dados, proximo_mes: proximo } };"
+      },
+      "id": "12ea077e-3c20-4c37-9202-bd8df5538c0f",
+      "name": "Proximo mes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8c040250-2005-46e9-ab4f-0f240e2c481e",
+              "leftValue": "={{ $json.parar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b307dd6f-d26e-4aba-bf32-b893603a8fbc",
+      "name": "Parar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $json;\nconst comDados = r.historico.filter((h) => h.linhas > 0);\nreturn [{ json: {\n  mes_mais_antigo_com_dados: comDados.length ? comDados[comDados.length - 1].mes : null,\n  chegou_no_inicio: r.fim_dados,\n  retomar_em: r.fim_dados ? null : r.proximo_mes,\n  total_linhas: r.historico.reduce((s, h) => s + h.linhas, 0),\n  meses: r.historico,\n} }];"
+      },
+      "id": "5d24a0a7-89d5-47ff-82f2-275526d1d21e",
+      "name": "Resumo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "9726700e-fffb-44f8-94e2-91364613dda9",
+      "name": "Pausa 10s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        100
+      ],
+      "webhookId": "d7fe8581-7442-47de-88d2-ec03216c4ccd"
+    }
+  ],
+  "connections": {
+    "Iniciar carga historica": {
+      "main": [
+        [
+          {
+            "node": "Controle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Controle": {
+      "main": [
+        [
+          {
+            "node": "Gerar 455 do mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar 455 do mes": {
+      "main": [
+        [
+          {
+            "node": "Veio arquivo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veio arquivo?": {
+      "main": [
+        [
+          {
+            "node": "Enviar para Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sem arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar para Supabase": {
+      "main": [
+        [
+          {
+            "node": "Proximo mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sem arquivo": {
+      "main": [
+        [
+          {
+            "node": "Proximo mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proximo mes": {
+      "main": [
+        [
+          {
+            "node": "Parar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parar?": {
+      "main": [
+        [
+          {
+            "node": "Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pausa 10s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pausa 10s": {
+      "main": [
+        [
+          {
+            "node": "Controle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "America/Sao_Paulo",
+    "saveManualExecutions": true
+  }
+}

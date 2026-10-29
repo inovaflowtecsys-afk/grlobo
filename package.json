@@ -1,0 +1,10 @@
+{
+  "name": "grupolobo",
+  "private": true,
+  "scripts": {
+    "install:web": "npm --prefix web install",
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "preview": "npm --prefix web run preview"
+  }
+}
