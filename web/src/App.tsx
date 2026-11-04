@@ -11,6 +11,7 @@ import { FaturamentoPage } from "./pages/FaturamentoPage";
 import { EntregasPage } from "./pages/EntregasPage";
 import { GestaoAVistaPage } from "./pages/GestaoAVistaPage";
 import { EmpresaPage } from "./pages/EmpresaPage";
+import { FreteEntregaPage } from "./pages/FreteEntregaPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RecuperarSenhaPage } from "./pages/RecuperarSenhaPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
@@ -48,6 +49,9 @@ export function App() {
           <Route path="/entregas/gestao-a-vista" element={<GestaoAVistaPage />} />
         </Route>
         <Route element={<AppShell />}>
+          <Route element={<ModuloRoute modulo="frete_entrega" />}>
+            <Route path="/frete-entrega" element={<FreteEntregaPage />} />
+          </Route>
           <Route element={<ModuloRoute modulo="empresa" />}>
             <Route path="/empresa" element={<EmpresaPage />} />
           </Route>

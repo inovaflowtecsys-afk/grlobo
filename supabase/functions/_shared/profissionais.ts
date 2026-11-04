@@ -62,7 +62,7 @@ export function parseTipoUsuario(value: unknown) {
   return value === "ADMINISTRADOR" ? "ADMINISTRADOR" : "USUARIO";
 }
 
-const MODULOS = ["dashboard", "conhecimentos", "entregas", "faturamento", "empresa", "profissionais"];
+const MODULOS = ["dashboard", "conhecimentos", "entregas", "faturamento", "frete_entrega", "empresa", "profissionais"];
 
 /** Só guarda as chaves conhecidas, com valor booleano (true = modulo liberado). */
 export function parseModulosAcesso(value: unknown) {
