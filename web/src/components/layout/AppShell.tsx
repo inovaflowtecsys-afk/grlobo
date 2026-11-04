@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BarChart3, Building2, FileText, Handshake, Radar, Lock, LogOut, Menu, ReceiptText, Route, UsersRound, X } from "lucide-react";
+import { BarChart3, Building2, FileText, Handshake, Radar, Lock, LogOut, Menu, ReceiptText, Route, Truck, UsersRound, X } from "lucide-react";
 import { brand } from "../../lib/brand";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
@@ -21,6 +21,7 @@ const navGroups = [
       { label: "Operações", to: "/operacoes", icon: Route },
       { label: "Comercial", to: "/comercial", icon: Handshake },
       { label: "Faturamento", to: "/faturamento", icon: ReceiptText },
+      { label: "Frete entrega", to: "/frete-entrega", icon: Truck },
     ],
   },
   { label: "Cadastros", items: [
@@ -37,6 +38,7 @@ const routeTitles: Record<string, string> = {
   "/operacoes": "Operações",
   "/comercial": "Comercial",
   "/faturamento": "Faturamento",
+  "/frete-entrega": "Frete entrega",
   "/empresa": "Empresa",
   "/profissionais": "Profissionais",
 };
