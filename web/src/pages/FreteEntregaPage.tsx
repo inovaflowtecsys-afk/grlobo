@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Eye, History, Plus, RefreshCw, Search, SquarePen, Trash2, Truck, UsersRound, X } from "lucide-react";
+import { Eye, FileSpreadsheet, FileText, History, Loader2, Plus, RefreshCw, Search, SquarePen, Trash2, Truck, UsersRound, X } from "lucide-react";
 import { DataGrid, type DataGridColumn } from "../components/common/DataGrid";
 import { PageHeader } from "../components/common/PageHeader";
 import { Badge } from "../components/ui/badge";
@@ -10,7 +10,8 @@ import { Label } from "../components/ui/label";
 import { Modal } from "../components/ui/modal";
 import { Switch } from "../components/ui/switch";
 import { useAuth } from "../hooks/useAuth";
-import { formatBRL, formatDateTimeBR } from "../lib/format";
+import { descreverFiltrosFrete, exportFretesExcel, exportFretesPdf } from "../lib/exportFrete";
+import { formatBRL, formatDateTimeBR, formatInt } from "../lib/format";
 import { agoraLocal, formatCpf, isoParaLocal, mensagemErro, parseValor, valorParaCampo } from "../lib/frete";
 import { cn } from "../lib/utils";
 import {
@@ -21,6 +22,7 @@ import {
   listFretes,
   listLog,
   listMotoristas,
+  listTodosFretes,
   updateFrete,
   updateMotorista,
 } from "../services/frete";
@@ -65,6 +67,7 @@ export function FreteEntregaPage() {
     sortDirection: "desc",
   });
   const [notaInput, setNotaInput] = useState("");
+  const [exportando, setExportando] = useState<"" | "pdf" | "excel">("");
 
   // busca por nota fiscal com debounce
   useEffect(() => {
@@ -100,6 +103,21 @@ export function FreteEntregaPage() {
   useEffect(() => {
     loadRows();
   }, [loadRows]);
+
+  /** Baixa todos os fretes dos filtros atuais (não só a página) e gera o arquivo. */
+  async function exportar(tipo: "pdf" | "excel") {
+    setExportando(tipo);
+    try {
+      const todos = await listTodosFretes(query);
+      const filtros = descreverFiltrosFrete(query, motoristas.find((m) => m.id === query.motoristaId)?.nome ?? "");
+      if (tipo === "pdf") await exportFretesPdf(todos, filtros);
+      else exportFretesExcel(todos, filtros);
+    } catch (e) {
+      showFeedback("erro", mensagemErro(e, "Não foi possível exportar os fretes."));
+    } finally {
+      setExportando("");
+    }
+  }
 
   function showFeedback(type: "ok" | "erro", text: string) {
     setFeedback({ type, text });
@@ -232,6 +250,20 @@ export function FreteEntregaPage() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-brand-border">{formatInt(total)} registro{total === 1 ? "" : "s"} nos filtros atuais</p>
+        <div className="flex gap-2">
+          <Button variant="secondary" disabled={exportando !== "" || total === 0} onClick={() => exportar("pdf")} title="Baixar em PDF todos os registros dos filtros atuais">
+            {exportando === "pdf" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <FileText className="size-4" aria-hidden="true" />}
+            PDF
+          </Button>
+          <Button variant="secondary" disabled={exportando !== "" || total === 0} onClick={() => exportar("excel")} title="Exportar para Excel todos os registros dos filtros atuais">
+            {exportando === "excel" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <FileSpreadsheet className="size-4" aria-hidden="true" />}
+            Excel
+          </Button>
+        </div>
+      </div>
 
       <DataGrid
         columns={columns}

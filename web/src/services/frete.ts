@@ -6,9 +6,11 @@ const COLUMNS =
   "id,data_registro,motorista_id,valor_frete,valor_chapa,valor_descarga,valor_adicional,observacao,pago,data_pagamento,nota_fiscal,created_at," +
   "motorista:frete_motoristas(id,nome)";
 
-export async function listFretes(query: FretesQuery) {
-  const from = (query.page - 1) * query.pageSize;
-  let request = supabase.from("frete_entregas").select(COLUMNS, { count: "exact" }).is("deleted_at", null);
+// o PostgREST devolve no máximo 1000 linhas por chamada
+const BLOCO = 1000;
+
+function consultaFretes(query: FretesQuery, contar: boolean) {
+  let request = supabase.from("frete_entregas").select(COLUMNS, contar ? { count: "exact" } : undefined).is("deleted_at", null);
 
   if (query.motoristaId) request = request.eq("motorista_id", query.motoristaId);
   // o fuso do Brasil não tem horário de verão: -03:00 fixo cobre o dia inteiro
@@ -18,12 +20,27 @@ export async function listFretes(query: FretesQuery) {
   if (nota) request = request.ilike("nota_fiscal", `%${nota}%`);
   if (query.pago !== "todos") request = request.eq("pago", query.pago === "pago");
 
-  const { data, error, count } = await request
-    .order(query.sortBy, { ascending: query.sortDirection === "asc" })
-    .order("created_at", { ascending: false })
-    .range(from, from + query.pageSize - 1);
+  // "id" no fim garante ordem estável entre os blocos
+  return request.order(query.sortBy, { ascending: query.sortDirection === "asc" }).order("created_at", { ascending: false }).order("id");
+}
+
+export async function listFretes(query: FretesQuery) {
+  const from = (query.page - 1) * query.pageSize;
+  const { data, error, count } = await consultaFretes(query, true).range(from, from + query.pageSize - 1);
   if (error) throw error;
   return { data: (data ?? []) as unknown as FreteListItem[], count: count ?? 0 };
+}
+
+/** Todos os fretes dos filtros atuais (sem paginação), para exportar. */
+export async function listTodosFretes(query: FretesQuery) {
+  const todos: FreteListItem[] = [];
+  for (let from = 0; ; from += BLOCO) {
+    const { data, error } = await consultaFretes(query, false).range(from, from + BLOCO - 1);
+    if (error) throw error;
+    const bloco = (data ?? []) as unknown as FreteListItem[];
+    todos.push(...bloco);
+    if (bloco.length < BLOCO) return todos;
+  }
 }
 
 function payload(valores: FreteFormData) {

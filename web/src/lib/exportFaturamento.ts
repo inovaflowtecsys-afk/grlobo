@@ -140,7 +140,7 @@ const VERMELHO: [number, number, number] = [197, 72, 82];
 const CINZA: [number, number, number] = [75, 83, 93];
 
 /** O logo do sistema é SVG; o jsPDF precisa de imagem, então desenha o SVG num canvas. */
-async function logoPng(): Promise<{ dados: string; largura: number; altura: number } | null> {
+export async function logoPng(): Promise<{ dados: string; largura: number; altura: number } | null> {
   try {
     const img = new Image();
     img.src = brand.logo;
