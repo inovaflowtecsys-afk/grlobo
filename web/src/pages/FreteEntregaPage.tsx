@@ -359,6 +359,7 @@ function FreteFormModal({
       : emptyForm(),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [aba, setAba] = useState<"cadastro" | "historico">("cadastro");
   const [motoristasOpen, setMotoristasOpen] = useState<{ nome: string } | null>(null);
   const [dataPagamentoPrevia] = useState(() => new Date().toISOString());
 
@@ -400,7 +401,30 @@ function FreteFormModal({
           </button>
         </div>
 
-        <div className="space-y-4">
+        {record ? (
+          <div role="tablist" aria-label="Seções do frete" className="flex gap-1 border-b border-brand-border/15">
+            {(["cadastro", "historico"] as const).map((chave) => (
+              <button
+                key={chave}
+                type="button"
+                role="tab"
+                aria-selected={aba === chave}
+                className={cn(
+                  "-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition",
+                  aba === chave ? "border-brand-primary text-brand-primary" : "border-transparent text-brand-border hover:text-brand-dark",
+                )}
+                onClick={() => setAba(chave)}
+              >
+                {chave === "cadastro" ? "Cadastro" : "Histórico"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {record && aba === "historico" ? <Historico entidade="FRETE" registroId={record.id} motoristas={motoristas} /> : null}
+
+        {/* o cadastro continua montado ao trocar de aba, para não perder o que foi digitado */}
+        <div className={cn("space-y-4", record && aba === "historico" && "hidden")}>
           <div className="grid gap-4 md:grid-cols-[220px_1fr]">
             <Field label="Data" required error={errors.data_registro}>
               <Input className="h-10" type="datetime-local" value={values.data_registro} onChange={(e) => change("data_registro", e.target.value)} />
@@ -468,7 +492,6 @@ function FreteFormModal({
             ) : null}
           </div>
 
-          {record ? <Historico entidade="FRETE" registroId={record.id} motoristas={motoristas} /> : null}
         </div>
 
         <div className="flex justify-end gap-2 border-t border-brand-border/10 pt-4">
@@ -822,7 +845,7 @@ function Historico({ entidade, registroId, motoristas }: { entidade: "FRETE" | "
       {!itens && !falhou ? <p className="text-xs text-brand-border">Carregando...</p> : null}
       {itens && !itens.length ? <p className="text-xs text-brand-border">Sem registros no histórico.</p> : null}
       {itens && itens.length ? (
-        <ul className="max-h-48 space-y-2 overflow-y-auto">
+        <ul className="max-h-96 space-y-2 overflow-y-auto">
           {itens.map((i) => (
             <li key={i.id} className="flex flex-col gap-0.5 text-sm">
               <div className="flex flex-wrap items-center gap-2">
