@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { History, Plus, RefreshCw, Search, SquarePen, Trash2, Truck, UsersRound, X } from "lucide-react";
+import { Eye, History, Plus, RefreshCw, Search, SquarePen, Trash2, Truck, UsersRound, X } from "lucide-react";
 import { DataGrid, type DataGridColumn } from "../components/common/DataGrid";
 import { PageHeader } from "../components/common/PageHeader";
 import { Badge } from "../components/ui/badge";
@@ -9,6 +9,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Modal } from "../components/ui/modal";
 import { Switch } from "../components/ui/switch";
+import { useAuth } from "../hooks/useAuth";
 import { formatBRL, formatDateTimeBR } from "../lib/format";
 import { agoraLocal, formatCpf, isoParaLocal, mensagemErro, parseValor, valorParaCampo } from "../lib/frete";
 import { cn } from "../lib/utils";
@@ -40,6 +41,10 @@ const emptyForm = (): FreteFormData => ({
 });
 
 export function FreteEntregaPage() {
+  const { podeAcao } = useAuth();
+  const podeIncluir = podeAcao("frete_entrega_incluir", "frete_entrega");
+  const podeEditar = podeAcao("frete_entrega_editar", "frete_entrega");
+  const podeExcluir = podeAcao("frete_entrega_excluir", "frete_entrega");
   const [rows, setRows] = useState<FreteListItem[]>([]);
   const [motoristas, setMotoristas] = useState<FreteMotorista[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,37 +150,30 @@ export function FreteEntregaPage() {
           <div className="flex justify-end gap-1">
             <button
               type="button"
-              title="Editar"
-              aria-label={`Editar frete de ${row.motorista?.nome ?? "motorista"}`}
+              title={podeEditar ? "Editar" : "Visualizar"}
+              aria-label={`${podeEditar ? "Editar" : "Visualizar"} frete de ${row.motorista?.nome ?? "motorista"}`}
               className="inline-flex size-8 items-center justify-center rounded-md text-brand-border transition hover:bg-brand-muted hover:text-brand-dark"
               onClick={() => setModal({ record: row })}
             >
-              <SquarePen className="size-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              title="Excluir"
-              aria-label={`Excluir frete de ${row.motorista?.nome ?? "motorista"}`}
-              className="inline-flex size-8 items-center justify-center rounded-md text-status-error transition hover:bg-status-error/10"
-              onClick={() => setExcluir(row)}
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
+              {podeEditar ? <SquarePen className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
             </button>
           </div>
         ),
       },
     ],
-    [],
+    [podeEditar],
   );
 
   return (
     <div className="space-y-5 p-4 md:p-7">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <PageHeader title="Frete entrega" description="Fretes pagos a motoristas, com controle de pagamento e nota fiscal." />
-        <Button className="shrink-0" onClick={() => setModal({ record: null })}>
-          <Plus className="size-4" aria-hidden="true" />
-          Novo frete
-        </Button>
+        {podeIncluir ? (
+          <Button className="shrink-0" onClick={() => setModal({ record: null })}>
+            <Plus className="size-4" aria-hidden="true" />
+            Novo frete
+          </Button>
+        ) : null}
       </div>
 
       {feedback ? (
@@ -263,6 +261,9 @@ export function FreteEntregaPage() {
           record={modal.record}
           motoristas={motoristas}
           saving={saving}
+          podeEditar={podeEditar}
+          podeExcluir={podeExcluir}
+          onExcluir={() => setExcluir(modal.record)}
           onMotoristasChanged={async () => {
             await loadMotoristas();
             await loadRows();
@@ -307,6 +308,7 @@ export function FreteEntregaPage() {
                   try {
                     await deleteFrete(excluir.id);
                     setExcluir(null);
+                    setModal(null);
                     showFeedback("ok", "Frete excluído.");
                     await loadRows();
                   } catch (e) {
@@ -331,6 +333,9 @@ function FreteFormModal({
   record,
   motoristas,
   saving,
+  podeEditar,
+  podeExcluir,
+  onExcluir,
   onClose,
   onSave,
   onMotoristasChanged,
@@ -338,11 +343,17 @@ function FreteFormModal({
   record: FreteListItem | null;
   motoristas: FreteMotorista[];
   saving: boolean;
+  podeEditar: boolean;
+  podeExcluir: boolean;
+  onExcluir: () => void;
   onClose: () => void;
   onSave: (valores: FreteFormData) => Promise<void>;
   onMotoristasChanged: () => Promise<void>;
 }) {
   const jaPago = record?.pago === true;
+  const somenteLeitura = record != null && !podeEditar;
+  const { podeAcao } = useAuth();
+  const podeIncluirMotorista = podeAcao("frete_entrega_incluir", "frete_entrega");
   const [values, setValues] = useState<FreteFormData>(() =>
     record
       ? {
@@ -424,7 +435,7 @@ function FreteFormModal({
         {record && aba === "historico" ? <Historico entidade="FRETE" registroId={record.id} motoristas={motoristas} /> : null}
 
         {/* o cadastro continua montado ao trocar de aba, para não perder o que foi digitado */}
-        <div className={cn("space-y-4", record && aba === "historico" && "hidden")}>
+        <fieldset disabled={somenteLeitura} className={cn("m-0 min-w-0 space-y-4 border-0 p-0", record && aba === "historico" && "hidden")}>
           <div className="grid gap-4 md:grid-cols-[220px_1fr]">
             <Field label="Data" required error={errors.data_registro}>
               <Input className="h-10" type="datetime-local" value={values.data_registro} onChange={(e) => change("data_registro", e.target.value)} />
@@ -434,6 +445,7 @@ function FreteFormModal({
                 motoristas={motoristas}
                 value={values.motorista_id}
                 onChange={(id) => change("motorista_id", id)}
+                podeCadastrar={podeIncluirMotorista}
                 onCadastrar={(nome) => setMotoristasOpen({ nome })}
                 onGerenciar={() => setMotoristasOpen({ nome: "" })}
               />
@@ -492,11 +504,21 @@ function FreteFormModal({
             ) : null}
           </div>
 
-        </div>
+        </fieldset>
 
-        <div className="flex justify-end gap-2 border-t border-brand-border/10 pt-4">
-          <Button variant="secondary" disabled={saving} onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+        <div className="flex flex-col gap-3 border-t border-brand-border/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {record && podeExcluir ? (
+              <Button variant="secondary" className="text-status-error" disabled={saving} onClick={onExcluir}>
+                <Trash2 className="size-4" aria-hidden="true" />
+                Excluir frete
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" disabled={saving} onClick={onClose}>{somenteLeitura ? "Fechar" : "Cancelar"}</Button>
+            {somenteLeitura ? null : <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>}
+          </div>
         </div>
       </form>
 
@@ -518,12 +540,14 @@ function MotoristaCombobox({
   motoristas,
   value,
   onChange,
+  podeCadastrar,
   onCadastrar,
   onGerenciar,
 }: {
   motoristas: FreteMotorista[];
   value: string;
   onChange: (id: string) => void;
+  podeCadastrar: boolean;
   onCadastrar: (nome: string) => void;
   onGerenciar: () => void;
 }) {
@@ -588,6 +612,7 @@ function MotoristaCombobox({
             {!filtrados.length ? (
               <li className="space-y-2 px-3 py-2">
                 <p className="text-brand-border">Nenhum motorista encontrado.</p>
+                {podeCadastrar ? (
                 <button
                   type="button"
                   className="inline-flex items-center gap-2 font-semibold text-brand-primary hover:underline"
@@ -599,6 +624,7 @@ function MotoristaCombobox({
                   <Plus className="size-4" aria-hidden="true" />
                   Cadastrar motorista{texto.trim() ? ` "${texto.trim()}"` : ""}
                 </button>
+                ) : null}
               </li>
             ) : null}
           </ul>
@@ -639,6 +665,11 @@ function MotoristasModal({
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState("");
   const [historico, setHistorico] = useState<FreteMotorista | null>(null);
+  const { podeAcao } = useAuth();
+  const podeIncluir = podeAcao("frete_entrega_incluir", "frete_entrega");
+  const podeEditar = podeAcao("frete_entrega_editar", "frete_entrega");
+  const podeExcluir = podeAcao("frete_entrega_excluir", "frete_entrega");
+  const podeSalvar = editando ? podeEditar : podeIncluir;
 
   const lista = motoristas.filter((m) => m.nome.toLocaleLowerCase("pt-BR").includes(busca.trim().toLocaleLowerCase("pt-BR")));
 
@@ -692,6 +723,7 @@ function MotoristasModal({
   return (
     <Modal open title="Motoristas" onClose={onClose} className="max-w-xl">
       <div className="space-y-4">
+        {podeIncluir || podeEditar ? (
         <form className="space-y-3 rounded-lg border border-brand-border/15 p-4" onSubmit={salvar} noValidate>
           <p className="text-sm font-bold">{editando ? "Editar motorista" : "Novo motorista"}</p>
           <div className="grid gap-3 sm:grid-cols-[1fr_170px]">
@@ -705,9 +737,10 @@ function MotoristasModal({
           {erro ? <p className="text-xs font-medium text-status-error">{erro}</p> : null}
           <div className="flex justify-end gap-2">
             {editando || nome || cpf ? <Button variant="secondary" disabled={saving} onClick={limpar}>Limpar</Button> : null}
-            <Button type="submit" disabled={saving}>{saving ? "Salvando..." : editando ? "Salvar alterações" : "Incluir"}</Button>
+            <Button type="submit" disabled={saving || !podeSalvar}>{saving ? "Salvando..." : editando ? "Salvar alterações" : "Incluir"}</Button>
           </div>
         </form>
+        ) : null}
 
         <div className="space-y-2">
           <div className="relative">
@@ -731,29 +764,33 @@ function MotoristasModal({
                   >
                     <History className="size-4" aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
-                    title="Editar"
-                    aria-label={`Editar ${m.nome}`}
-                    className="inline-flex size-8 items-center justify-center rounded-md text-brand-border transition hover:bg-brand-muted hover:text-brand-dark"
-                    onClick={() => {
-                      setEditando(m);
-                      setNome(m.nome);
-                      setCpf(m.cpf ?? "");
-                      setErro("");
-                    }}
-                  >
-                    <SquarePen className="size-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Excluir"
-                    aria-label={`Excluir ${m.nome}`}
-                    className="inline-flex size-8 items-center justify-center rounded-md text-status-error transition hover:bg-status-error/10"
-                    onClick={() => setApagar(m)}
-                  >
-                    <Trash2 className="size-4" aria-hidden="true" />
-                  </button>
+                  {podeEditar ? (
+                    <button
+                      type="button"
+                      title="Editar"
+                      aria-label={`Editar ${m.nome}`}
+                      className="inline-flex size-8 items-center justify-center rounded-md text-brand-border transition hover:bg-brand-muted hover:text-brand-dark"
+                      onClick={() => {
+                        setEditando(m);
+                        setNome(m.nome);
+                        setCpf(m.cpf ?? "");
+                        setErro("");
+                      }}
+                    >
+                      <SquarePen className="size-4" aria-hidden="true" />
+                    </button>
+                  ) : null}
+                  {podeExcluir ? (
+                    <button
+                      type="button"
+                      title="Excluir"
+                      aria-label={`Excluir ${m.nome}`}
+                      className="inline-flex size-8 items-center justify-center rounded-md text-status-error transition hover:bg-status-error/10"
+                      onClick={() => setApagar(m)}
+                    >
+                      <Trash2 className="size-4" aria-hidden="true" />
+                    </button>
+                  ) : null}
                 </div>
               </li>
             ))}

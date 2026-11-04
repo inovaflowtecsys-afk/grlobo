@@ -1,7 +1,7 @@
 import { type ReactNode, createContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import type { ModuloChave } from "../lib/modulos";
+import { type AcaoChave, type ModuloChave, permitido } from "../lib/modulos";
 import { signInWithPassword, signOut } from "../services/auth";
 import { getProfile } from "../services/profiles";
 import type { Profile } from "../types/profile";
@@ -11,8 +11,10 @@ type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
-  /** Administrador acessa tudo; usuário só os módulos com o switch ligado. */
+  /** Usuário precisa do switch ligado; administrador acessa tudo, exceto o que foi desligado. */
   podeAcessar: (modulo: ModuloChave) => boolean;
+  /** Permissão de ação dentro de um módulo (incluir, editar, excluir). Vale só se o módulo estiver liberado. */
+  podeAcao: (acao: AcaoChave, modulo: ModuloChave) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -102,11 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = Boolean(profile?.administrador || profile?.tipo_usuario === "ADMINISTRADOR");
 
-  const podeAcessar = useCallback((modulo: ModuloChave) => isAdmin || profile?.modulos_acesso?.[modulo] === true, [isAdmin, profile]);
+  const podeAcessar = useCallback((modulo: ModuloChave) => permitido(profile?.modulos_acesso, modulo, isAdmin), [isAdmin, profile]);
+  const podeAcao = useCallback(
+    (acao: AcaoChave, modulo: ModuloChave) => permitido(profile?.modulos_acesso, modulo, isAdmin) && permitido(profile?.modulos_acesso, acao, isAdmin),
+    [isAdmin, profile],
+  );
 
   const value = useMemo(
-    () => ({ user, profile, loading, isAdmin, podeAcessar, login, logout, refreshProfile }),
-    [user, profile, loading, isAdmin, podeAcessar, login, logout, refreshProfile],
+    () => ({ user, profile, loading, isAdmin, podeAcessar, podeAcao, login, logout, refreshProfile }),
+    [user, profile, loading, isAdmin, podeAcessar, podeAcao, login, logout, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

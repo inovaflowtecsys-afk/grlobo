@@ -10,7 +10,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Modal } from "../components/ui/modal";
 import { Switch } from "../components/ui/switch";
-import { MODULOS, normalizarModulos, todosLiberados } from "../lib/modulos";
+import { ACOES, MODULOS, normalizarModulos, todosLiberados } from "../lib/modulos";
 import { useAuth } from "../hooks/useAuth";
 import { cn } from "../lib/utils";
 import { joinUnique } from "../lib/format";
@@ -336,7 +336,7 @@ function ProfissionalFormModal({
           cargo_id: record.cargo_id || "",
           filial_id: record.filial_id || "",
           tipo_usuario: record.tipo_usuario,
-          modulos_acesso: normalizarModulos(record.modulos_acesso),
+          modulos_acesso: normalizarModulos(record.modulos_acesso, record.tipo_usuario === "ADMINISTRADOR"),
           ativo: record.ativo,
         }
       : emptyForm,
@@ -460,28 +460,45 @@ function ProfissionalFormModal({
             <div>
               <p className="text-sm font-bold">Acesso aos módulos</p>
               <p className="text-xs text-brand-border">
-                {values.tipo_usuario === "ADMINISTRADOR"
-                  ? "Administrador tem acesso a todos os módulos."
-                  : "Ligue os módulos que este usuário pode abrir no menu. Desligado = acesso negado."}
+                Ligue os módulos que este usuário pode abrir no menu. Desligado = acesso negado. Vale também para administradores.
               </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {MODULOS.map((m) => {
-                const admin = values.tipo_usuario === "ADMINISTRADOR";
                 const dashboard = m.chave === "dashboard";
-                const liberado = admin || dashboard || values.modulos_acesso[m.chave] === true;
+                // o próprio usuário não pode tirar de si o acesso a Profissionais (ficaria sem como desfazer)
+                const trava = dashboard || (m.chave === "profissionais" && isSelf);
+                const liberado = dashboard || values.modulos_acesso[m.chave] === true;
+                const acoes = ACOES.filter((a) => a.modulo === m.chave);
                 return (
-                  <div key={m.chave} className="flex items-center justify-between gap-3 rounded-md bg-brand-surface px-3 py-2">
-                    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
-                      <m.icone className="size-4 shrink-0 text-brand-primary" aria-hidden="true" />
-                      <span className="truncate">{m.rotulo}</span>
-                    </span>
-                    <Switch
-                      checked={liberado}
-                      disabled={admin || dashboard}
-                      label={`Acesso ao módulo ${m.rotulo}`}
-                      onChange={(valor) => setValues((atual) => ({ ...atual, modulos_acesso: { ...atual.modulos_acesso, [m.chave]: valor } }))}
-                    />
+                  <div key={m.chave} className={cn("space-y-2 rounded-md bg-brand-surface px-3 py-2", acoes.length && "sm:col-span-2")}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                        <m.icone className="size-4 shrink-0 text-brand-primary" aria-hidden="true" />
+                        <span className="truncate">{m.rotulo}</span>
+                      </span>
+                      <Switch
+                        checked={liberado}
+                        disabled={trava}
+                        label={`Acesso ao módulo ${m.rotulo}`}
+                        onChange={(valor) => setValues((atual) => ({ ...atual, modulos_acesso: { ...atual.modulos_acesso, [m.chave]: valor } }))}
+                      />
+                    </div>
+                    {acoes.length ? (
+                      <div className="grid gap-2 border-t border-brand-border/10 pt-2 sm:grid-cols-3">
+                        {acoes.map((a) => (
+                          <div key={a.chave} className="flex items-center justify-between gap-3 pl-6">
+                            <span className={cn("text-sm", liberado ? "font-semibold" : "text-brand-border")}>{a.rotulo}</span>
+                            <Switch
+                              checked={liberado && values.modulos_acesso[a.chave] === true}
+                              disabled={!liberado}
+                              label={`${a.rotulo} em ${m.rotulo}`}
+                              onChange={(valor) => setValues((atual) => ({ ...atual, modulos_acesso: { ...atual.modulos_acesso, [a.chave]: valor } }))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
