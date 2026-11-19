@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Importador SSW (Grupo Lobo / Macklog)",
+  "version": "1.1.0",
+  "description": "Busca os relatórios do SSW (036, 455 e financeiro) na sessão aberta no navegador e envia ao sistema da empresa escolhida (Grupo Lobo ou Macklog), nos mesmos horários do robô.",
+  "permissions": ["alarms", "storage", "notifications", "scripting"],
+  "host_permissions": ["https://tms.ssw.inf.br/*", "https://xggknkcipdvksfvlvtmh.supabase.co/*", "https://fmlrycddonddlzphraaz.supabase.co/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    { "matches": ["https://tms.ssw.inf.br/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ],
+  "action": { "default_popup": "popup.html", "default_title": "Importador SSW" },
+  "options_page": "options.html",
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}

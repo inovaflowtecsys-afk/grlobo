@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Importador SSW · Opções</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; color: #1b2430; }
+  h1 { font-size: 20px; } label { display: block; margin: 14px 0 4px; font-weight: 600; }
+  input[type=text], input[type=password], input[type=number] { width: 100%; padding: 8px; border: 1px solid #b8c2d0; border-radius: 6px; box-sizing: border-box; }
+  .dica { color: #5b6b7f; font-size: 12px; margin-top: 2px; } .linha { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+  .linha label { font-weight: 400; margin: 0; display: flex; gap: 6px; align-items: center; }
+  button { margin-top: 20px; padding: 9px 16px; border: 0; border-radius: 6px; background: #12437f; color: #fff; font: inherit; cursor: pointer; }
+  #ok { margin-left: 12px; color: #1e6b34; }
+</style>
+</head>
+<body>
+<h1>Grupo Lobo · Importador SSW</h1>
+<p>Estes dados ficam <strong>só neste navegador</strong>. Nenhuma senha do SSW é guardada: a extensão usa a sessão que você já abriu.</p>
+
+<label for="perfil">Empresa deste navegador</label>
+<select id="perfil" style="width:100%;padding:8px;border:1px solid #b8c2d0;border-radius:6px">
+  <option value="grupolobo">Grupo Lobo (036, 455 e financeiro)</option>
+  <option value="macklog">Macklog (455 a cada 2 h e financeiro 3x ao dia)</option>
+</select>
+<div class="dica">Use um perfil/navegador por empresa: o SSW aceita uma sessão por usuário. Na Macklog a filial fica em branco.</div>
+
+<label for="usuario">Usuário do SSW (como aparece na fila do 156)</label>
+<input id="usuario" type="text" autocomplete="off" placeholder="ex.: seu.login">
+<div class="dica">Usado só para reconhecer os pedidos que a própria extensão fez na fila do 156.</div>
+
+<label for="token">Token do importador</label>
+<input id="token" type="password" autocomplete="off" placeholder="cole aqui o mesmo valor do segredo SSW_IMPORT_TOKEN">
+<div class="dica">Mesmo valor configurado no Supabase (segredo SSW_IMPORT_TOKEN). Não compartilhe.</div>
+
+<label for="filial">Filial (unidade do 036 e da 455)</label>
+<input id="filial" type="text" value="SJP">
+
+<label for="ocioso">Esperar você ficar parado por (segundos)</label>
+<input id="ocioso" type="number" min="0" max="900" value="90">
+<div class="dica">Antes de cada rodada a extensão espera esse tempo sem mouse/teclado no SSW, porque ela troca a unidade/opção da sessão. Se você ficar ativo por mais de 10 minutos, a rodada é pulada.</div>
+<div class="linha"><label><input id="ignorar" type="checkbox"> Rodar mesmo se eu estiver usando o SSW (pode atrapalhar o que você está fazendo)</label></div>
+
+<label>Relatórios</label>
+<div class="linha">
+  <label><input id="h036" type="checkbox" checked> 036 (a cada 10 min)</label>
+  <label><input id="h455" type="checkbox" checked> 455 (de hora em hora)</label>
+  <label><input id="hfin" type="checkbox" checked> Financeiro (5x ao dia)</label>
+</div>
+
+<button id="salvar">Salvar</button><span id="ok"></span>
+<script src="options.js"></script>
+</body>
+</html>

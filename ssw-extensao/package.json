@@ -1,0 +1,6 @@
+{
+  "name": "ssw-extensao",
+  "private": true,
+  "type": "module",
+  "description": "Extensao do navegador: busca os relatorios do SSW na sessao aberta e envia ao Supabase do Grupo Lobo."
+}

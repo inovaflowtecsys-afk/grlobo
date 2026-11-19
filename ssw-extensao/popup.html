@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Importador SSW</title>
+<style>
+  body { font: 13px/1.4 system-ui, sans-serif; margin: 0; width: 380px; color: #1b2430; }
+  header { padding: 12px 14px; background: #12437f; color: #fff; }
+  header h1 { margin: 0; font-size: 15px; }
+  header p { margin: 2px 0 0; opacity: .85; font-size: 12px; }
+  section { padding: 10px 14px; border-bottom: 1px solid #e3e8ef; }
+  h2 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #5b6b7f; }
+  .estado { padding: 8px 10px; border-radius: 6px; font-weight: 600; }
+  .ok { background: #e6f4ea; color: #1e6b34; } .aviso { background: #fff3e0; color: #9a5300; } .erro { background: #fdecea; color: #a12622; } .neutro { background: #eef1f5; color: #44556b; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  li { padding: 3px 0; display: flex; justify-content: space-between; gap: 8px; }
+  li small { color: #5b6b7f; text-align: right; }
+  .bad { color: #a12622; } .good { color: #1e6b34; }
+  button { font: inherit; padding: 6px 10px; border: 1px solid #b8c2d0; border-radius: 6px; background: #fff; cursor: pointer; }
+  button.primary { background: #12437f; border-color: #12437f; color: #fff; }
+  .acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .vazio { color: #7a8798; }
+</style>
+</head>
+<body>
+<header><h1>Grupo Lobo · Importador SSW</h1><p>Busca os relatórios na sessão do SSW aberta nesta janela.</p></header>
+<section><div id="estado" class="estado neutro">Carregando…</div><p id="mensagem" class="vazio"></p></section>
+<section><h2>Próximas rodadas</h2><ul id="proximas"></ul></section>
+<section><h2>Últimos resultados</h2><ul id="resultados"></ul></section>
+<section>
+  <h2>Ações</h2>
+  <div class="acoes">
+    <button id="retomar" class="primary" hidden>Retomar</button>
+    <button id="pausar"></button>
+    <button data-rodar="036">Rodar 036 agora</button>
+    <button data-rodar="455">Rodar 455 agora</button>
+    <button data-rodar="financeiro">Rodar financeiro agora</button>
+    <button id="testar">Testar conexão</button>
+    <button id="opcoes">Opções</button>
+  </div>
+  <p id="retorno" class="vazio"></p>
+</section>
+<script src="popup.js"></script>
+</body>
+</html>
