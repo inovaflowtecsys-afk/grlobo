@@ -19,9 +19,11 @@ type DataGridProps<T> = {
   onSort?: (key: string) => void;
   emptyTitle?: string;
   emptyDescription?: string;
+  /** Quando informado, a linha inteira é clicável (e acessível pelo teclado com Enter). */
+  onRowClick?: (row: T) => void;
 };
 
-export function DataGrid<T>({ columns, rows, loading, getRowId, sortBy, sortDirection, onSort, emptyTitle = "Nenhum registro encontrado.", emptyDescription }: DataGridProps<T>) {
+export function DataGrid<T>({ columns, rows, loading, getRowId, sortBy, sortDirection, onSort, emptyTitle = "Nenhum registro encontrado.", emptyDescription, onRowClick }: DataGridProps<T>) {
   if (loading) {
     return (
       <div className="flex min-h-72 items-center justify-center rounded-lg border border-brand-border/15 bg-white">
@@ -69,7 +71,22 @@ export function DataGrid<T>({ columns, rows, loading, getRowId, sortBy, sortDire
           </thead>
           <tbody className="divide-y divide-brand-border/10">
             {rows.map((row) => (
-              <tr key={getRowId(row)} className="transition hover:bg-brand-surface">
+              <tr
+                key={getRowId(row)}
+                className={cn("transition hover:bg-brand-surface", onRowClick && "cursor-pointer focus-visible:bg-brand-surface focus-visible:outline-none")}
+                tabIndex={onRowClick ? 0 : undefined}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (event) => {
+                        if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+                          event.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+              >
                 {columns.map((column) => (
                   <td key={column.key} className={cn("px-4 py-3 align-middle", column.className)}>
                     {column.render(row)}

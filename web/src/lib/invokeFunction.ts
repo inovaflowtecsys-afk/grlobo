@@ -7,7 +7,10 @@ export async function invokeFunction<T = unknown>(name: string, body: Record<str
 
   const response = (error as { context?: Response }).context;
   if (response && typeof response.json === "function") {
-    const payload = await response.json().catch(() => null);
+    const payload = await response.clone().json().catch(async () => {
+      const text = await response.clone().text().catch(() => "");
+      return text ? { error: text } : null;
+    });
     if (payload?.error) throw new Error(String(payload.error));
   }
   throw new Error("Não foi possível concluir a operação. Tente novamente.");

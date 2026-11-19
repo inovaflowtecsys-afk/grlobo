@@ -1,16 +1,20 @@
 import { localParaIso, parseValor } from "../lib/frete";
 import { supabase } from "../lib/supabase";
-import type { FreteFormData, FreteListItem, FreteLogItem, FreteMotorista, FretesQuery } from "../types/frete";
+import type { FreteFormData, FreteFrota, FreteListItem, FreteLogItem, FreteMotorista, FretesQuery, TipoFrota } from "../types/frete";
 
 const COLUMNS =
-  "id,data_registro,motorista_id,valor_frete,valor_chapa,valor_descarga,valor_adicional,observacao,pago,data_pagamento,nota_fiscal,created_at," +
-  "motorista:frete_motoristas(id,nome)";
+  "id,data_registro,motorista_id,frota_id,valor_frete_carga,valor_frete,valor_coleta,valor_chapa,valor_descarga,valor_adicional,observacao,pago,data_pagamento,nota_fiscal,created_at," +
+  "motorista:frete_motoristas(id,nome),frota:frete_frota(id,placa,tipo)";
 
 // o PostgREST devolve no máximo 1000 linhas por chamada
 const BLOCO = 1000;
 
 function consultaFretes(query: FretesQuery, contar: boolean) {
-  let request = supabase.from("frete_entregas").select(COLUMNS, contar ? { count: "exact" } : undefined).is("deleted_at", null);
+  const placa = query.placa.replace(/[^A-Z0-9]/g, "");
+  // com filtro de placa o vínculo vira "inner" (só fretes com placa) e o filtro vale também para placas excluídas depois
+  const colunas = placa ? COLUMNS.replace("frota:frete_frota(", "frota:frete_frota!inner(") : COLUMNS;
+  let request = supabase.from("frete_entregas").select(colunas, contar ? { count: "exact" } : undefined).is("deleted_at", null);
+  if (placa) request = request.ilike("frota.placa", `%${placa}%`);
 
   if (query.motoristaId) request = request.eq("motorista_id", query.motoristaId);
   // o fuso do Brasil não tem horário de verão: -03:00 fixo cobre o dia inteiro
@@ -47,7 +51,10 @@ function payload(valores: FreteFormData) {
   return {
     data_registro: localParaIso(valores.data_registro),
     motorista_id: valores.motorista_id,
+    frota_id: valores.frota_id || null,
+    valor_frete_carga: parseValor(valores.valor_frete_carga) ?? 0,
     valor_frete: parseValor(valores.valor_frete) ?? 0,
+    valor_coleta: parseValor(valores.valor_coleta) ?? 0,
     valor_chapa: parseValor(valores.valor_chapa) ?? 0,
     valor_descarga: parseValor(valores.valor_descarga) ?? 0,
     valor_adicional: parseValor(valores.valor_adicional) ?? 0,
@@ -96,7 +103,29 @@ export async function deleteMotorista(id: string) {
   if (error) throw error;
 }
 
-export async function listLog(entidade: "FRETE" | "MOTORISTA", registroId: string) {
+export async function listFrotas() {
+  const { data, error } = await supabase.from("frete_frota").select("id,placa,tipo").is("deleted_at", null).order("placa");
+  if (error) throw error;
+  return (data ?? []) as FreteFrota[];
+}
+
+export async function createFrota(placa: string, tipo: TipoFrota) {
+  const { data, error } = await supabase.from("frete_frota").insert({ placa, tipo }).select("id,placa,tipo").single();
+  if (error) throw error;
+  return data as FreteFrota;
+}
+
+export async function updateFrota(id: string, placa: string, tipo: TipoFrota) {
+  const { error } = await supabase.from("frete_frota").update({ placa, tipo }).eq("id", id).is("deleted_at", null);
+  if (error) throw error;
+}
+
+export async function deleteFrota(id: string) {
+  const { error } = await supabase.from("frete_frota").update({ deleted_at: new Date().toISOString() }).eq("id", id).is("deleted_at", null);
+  if (error) throw error;
+}
+
+export async function listLog(entidade: "FRETE" | "MOTORISTA" | "PLACA", registroId: string) {
   const { data, error } = await supabase
     .from("frete_log")
     .select("id,entidade,registro_id,acao,usuario_nome,em,detalhes")

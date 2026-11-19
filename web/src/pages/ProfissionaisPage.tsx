@@ -292,7 +292,6 @@ export function ProfissionaisPage() {
               await loadRows();
             } catch (e) {
               showFeedback("erro", errorMessage(e, "Não foi possível salvar o profissional."));
-              setModal(null);
             } finally {
               setSaving(false);
             }
@@ -358,6 +357,9 @@ function ProfissionalFormModal({
 
     await onSave({ ...values, nome: values.nome.trim(), email: values.email.trim().toLowerCase() });
   }
+
+  const ordemModulos = ["empresa", "profissionais", "conhecimentos", "faturamento", "dashboard", "entregas", "frete_entrega"];
+  const modulosOrdenados = [...MODULOS].sort((a, b) => ordemModulos.indexOf(a.chave) - ordemModulos.indexOf(b.chave));
 
   return (
     <Modal open title={record ? "Editar profissional" : "Cadastrar profissional"} onClose={onClose} hideHeader>
@@ -463,8 +465,8 @@ function ProfissionalFormModal({
                 Ligue os módulos que este usuário pode abrir no menu. Desligado = acesso negado. Vale também para administradores.
               </p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {MODULOS.map((m) => {
+            <div className="grid gap-2">
+              {modulosOrdenados.map((m) => {
                 const dashboard = m.chave === "dashboard";
                 // o próprio usuário não pode tirar de si o acesso a Profissionais (ficaria sem como desfazer)
                 const trava = dashboard || (m.chave === "profissionais" && isSelf);
@@ -481,7 +483,19 @@ function ProfissionalFormModal({
                         checked={liberado}
                         disabled={trava}
                         label={`Acesso ao módulo ${m.rotulo}`}
-                        onChange={(valor) => setValues((atual) => ({ ...atual, modulos_acesso: { ...atual.modulos_acesso, [m.chave]: valor } }))}
+                        onChange={(valor) =>
+                          setValues((atual) => ({
+                            ...atual,
+                            modulos_acesso:
+                              m.chave === "frete_entrega"
+                                ? {
+                                    ...atual.modulos_acesso,
+                                    [m.chave]: valor,
+                                    ...Object.fromEntries(ACOES.filter((a) => a.modulo === m.chave).map((a) => [a.chave, valor])),
+                                  }
+                                : { ...atual.modulos_acesso, [m.chave]: valor },
+                          }))
+                        }
                       />
                     </div>
                     {acoes.length ? (

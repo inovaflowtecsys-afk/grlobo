@@ -9,12 +9,6 @@ import { loadDashboard, loadDashboardHistorico, type DashboardData, type RankIte
 
 const COLORS = { primary: "#12437f", accent: "#11a4de", red: "#c54852", grid: "#e6ebf2" };
 
-function daysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return toISODate(d);
-}
-
 function formatMonth(iso: string) {
   return `${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 }
@@ -116,7 +110,7 @@ function DpePerformanceList({ items }: { items: DpeRankItem[] }) {
 
 export function DashboardPage() {
   const today = useMemo(() => toISODate(new Date()), []);
-  const [from, setFrom] = useState(daysAgo(29));
+  const [from, setFrom] = useState(() => toISODate(new Date(new Date().getFullYear(), 0, 1)));
   const [to, setTo] = useState(today);
   const [unidade, setUnidade] = useState("");
   const [data, setData] = useState<DashboardData | null>(null);

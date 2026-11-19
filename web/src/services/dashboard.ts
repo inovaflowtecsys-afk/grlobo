@@ -242,6 +242,9 @@ export function computeDashboard(rows: Ctrc[], today: string) {
   const comPrazo = rows.filter((r) => dpeElegivel(r));
   const noPrazo = comPrazo.filter((r) => dpeNoPrazo(r));
   const dpeSerie = calcularDpeSerie(rows);
+  const otdMedioAno = dpeSerie.porMes.length
+    ? dpeSerie.porMes.reduce((soma, mes) => soma + mes.dpe, 0) / dpeSerie.porMes.length
+    : null;
 
   const dias = new Map<string, { dia: string; emitidos: number; entregues: number; frete: number }>();
   const dia = (d: string) => {
@@ -272,7 +275,7 @@ export function computeDashboard(rows: Ctrc[], today: string) {
       emTransito: abertos.length,
       atrasados: atrasados.length,
       cancelados: cancelados.length,
-      otd: comPrazo.length ? (noPrazo.length / comPrazo.length) * 100 : null,
+      otd: otdMedioAno,
       pesoKg: ativos.reduce((s, r) => s + (r.peso_real_kg ?? 0), 0),
       porDia: dpeSerie.porDia,
       porMes: dpeSerie.porMes,

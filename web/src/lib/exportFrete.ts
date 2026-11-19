@@ -3,7 +3,7 @@ import autoTable, { type CellDef, type RowInput } from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { brand } from "./brand";
 import { logoPng } from "./exportFaturamento";
-import { formatBRL, formatDateBR, formatDateTimeBR, toISODate } from "./format";
+import { formatBRL, formatDateBR, toISODate } from "./format";
 import type { FreteListItem, FretesQuery } from "../types/frete";
 
 const AZUL: [number, number, number] = [18, 67, 127];
@@ -13,7 +13,7 @@ const VERDE: [number, number, number] = [21, 128, 61];
 
 type Coluna = {
   titulo: string;
-  tipo: "texto" | "datahora" | "dinheiro";
+  tipo: "texto" | "datahora" | "dinheiro" | "percentual";
   largura: number;
   /** Colunas longas (observação) ficam só na planilha. */
   soExcel?: boolean;
@@ -21,14 +21,22 @@ type Coluna = {
 };
 
 const num = (v: number | string | null | undefined) => Number(v ?? 0) || 0;
+const total = (r: FreteListItem) => num(r.valor_frete) + num(r.valor_coleta) + num(r.valor_chapa) + num(r.valor_descarga) + num(r.valor_adicional);
+const resultado = (r: FreteListItem) => (num(r.valor_frete_carga) > 0 ? num(r.valor_frete) / num(r.valor_frete_carga) : null);
 
 const colunas: Coluna[] = [
   { titulo: "Data", tipo: "datahora", largura: 17, valor: (r) => r.data_registro },
-  { titulo: "Motorista", tipo: "texto", largura: 38, valor: (r) => r.motorista?.nome ?? "" },
-  { titulo: "Valor do frete", tipo: "dinheiro", largura: 15, valor: (r) => num(r.valor_frete) },
+  { titulo: "Motorista", tipo: "texto", largura: 28, valor: (r) => r.motorista?.nome ?? "" },
+  { titulo: "Placa", tipo: "texto", largura: 11, valor: (r) => r.frota?.placa ?? "" },
+  { titulo: "Tipo de veículo", tipo: "texto", largura: 16, valor: (r) => r.frota?.tipo ?? "" },
+  { titulo: "Frete Receita", tipo: "dinheiro", largura: 21, valor: (r) => num(r.valor_frete_carga) },
+  { titulo: "Valor do frete", tipo: "dinheiro", largura: 19, valor: (r) => num(r.valor_frete) },
+  { titulo: "Coleta", tipo: "dinheiro", largura: 13, valor: (r) => num(r.valor_coleta) },
   { titulo: "Chapa", tipo: "dinheiro", largura: 13, valor: (r) => num(r.valor_chapa) },
   { titulo: "Descarga", tipo: "dinheiro", largura: 13, valor: (r) => num(r.valor_descarga) },
   { titulo: "Adicional", tipo: "dinheiro", largura: 13, valor: (r) => num(r.valor_adicional) },
+  { titulo: "Total", tipo: "dinheiro", largura: 15, valor: total },
+  { titulo: "Resultado %", tipo: "percentual", largura: 16, valor: resultado },
   { titulo: "Pagamento", tipo: "texto", largura: 12, valor: (r) => (r.pago ? "Pago" : "Pendente") },
   { titulo: "Data do pagamento", tipo: "datahora", largura: 17, valor: (r) => r.data_pagamento },
   { titulo: "Nota fiscal", tipo: "texto", largura: 16, valor: (r) => r.nota_fiscal ?? "" },
@@ -43,6 +51,7 @@ export function descreverFiltrosFrete(q: FretesQuery, nomeMotorista: string) {
   return [
     periodo,
     q.motoristaId && nomeMotorista ? `Motorista: ${nomeMotorista}` : "",
+    q.placa ? `Placa: ${q.placa}` : "",
     q.notaFiscal.trim() ? `Nota fiscal: ${q.notaFiscal.trim()}` : "",
     q.pago !== "todos" ? `Pagamento: ${q.pago === "pago" ? "pagos" : "pendentes"}` : "",
   ]
@@ -51,13 +60,13 @@ export function descreverFiltrosFrete(q: FretesQuery, nomeMotorista: string) {
 }
 
 /** Data/hora no horário de Brasília como "relógio de parede", para o Excel não deslocar o horário. */
-function relogioSP(iso: string) {
+function dataSP(iso: string) {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
       .formatToParts(new Date(iso))
       .map((x) => [x.type, x.value]),
   );
-  return new Date(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute));
+  return new Date(Number(p.year), Number(p.month) - 1, Number(p.day));
 }
 
 export function exportFretesExcel(linhas: FreteListItem[], filtros: string) {
@@ -65,7 +74,7 @@ export function exportFretesExcel(linhas: FreteListItem[], filtros: string) {
   const dados = linhas.map((r) =>
     cols.map((c) => {
       const v = c.valor(r);
-      if (c.tipo === "datahora") return v ? relogioSP(String(v)) : null;
+      if (c.tipo === "datahora") return v ? dataSP(String(v)) : null;
       return v === "" ? null : v;
     }),
   );
@@ -78,7 +87,7 @@ export function exportFretesExcel(linhas: FreteListItem[], filtros: string) {
   ws["!freeze"] = { xSplit: 0, ySplit: 4 };
 
   cols.forEach((c, i) => {
-    const formato = c.tipo === "datahora" ? "dd/mm/yyyy hh:mm" : c.tipo === "dinheiro" ? '"R$" #,##0.00' : null;
+    const formato = c.tipo === "datahora" ? "dd/mm/yyyy" : c.tipo === "dinheiro" ? '"R$" #,##0.00' : c.tipo === "percentual" ? "0%" : null;
     if (!formato) return;
     for (let r = 4; r <= 4 + dados.length; r += 1) {
       const cel = ws[XLSX.utils.encode_cell({ r, c: i })];
@@ -124,16 +133,16 @@ export async function exportFretesPdf(linhas: FreteListItem[], filtros: string) 
     x += 56;
   });
 
-  const direita = (tipo: Coluna["tipo"]) => (tipo === "dinheiro" ? "right" : "left");
+  const direita = (tipo: Coluna["tipo"]) => (tipo === "dinheiro" || tipo === "percentual" ? "right" : "left");
   const corpo: RowInput[] = linhas.map((r) =>
     cols.map((c): CellDef => {
       const v = c.valor(r);
-      const texto = c.tipo === "datahora" ? (v ? formatDateTimeBR(String(v)) : "-") : c.tipo === "dinheiro" ? formatBRL(num(v as number)) : v == null || v === "" ? "-" : String(v);
+      const texto = c.tipo === "datahora" ? (v ? formatDateBR(String(v)) : "-") : c.tipo === "dinheiro" ? formatBRL(num(v as number)) : c.tipo === "percentual" ? (v == null ? "-" : `${(Number(v) * 100).toFixed(1).replace(".", ",")}%`) : v == null || v === "" ? "-" : String(v);
       return { content: texto, styles: { halign: direita(c.tipo) } };
     }),
   );
   const totalLinha: CellDef[] = cols.map((c, i) => ({
-    content: i === 0 ? "TOTAL" : c.tipo === "dinheiro" ? formatBRL(linhas.reduce((s, r) => s + num(c.valor(r) as number), 0)) : "",
+    content: i === 0 ? "TOTAL" : c.tipo === "dinheiro" ? formatBRL(linhas.reduce((s, r) => s + num(c.valor(r) as number), 0)) : c.tipo === "percentual" ? "-" : "",
     styles: { halign: direita(c.tipo), fontStyle: "bold", fillColor: [230, 235, 242] },
   }));
   const idxPagamento = cols.findIndex((c) => c.titulo === "Pagamento");
@@ -147,7 +156,7 @@ export async function exportFretesPdf(linhas: FreteListItem[], filtros: string) 
     styles: { font: "helvetica", fontSize: 7.5, cellPadding: 1.6, textColor: [10, 17, 25], overflow: "ellipsize" },
     headStyles: { fillColor: AZUL, textColor: 255, fontStyle: "bold" },
     alternateRowStyles: { fillColor: [244, 246, 249] },
-    columnStyles: Object.fromEntries(cols.map((c, i) => [i, { cellWidth: c.titulo === "Motorista" ? 62 : "auto" }])),
+    columnStyles: Object.fromEntries(cols.map((c, i) => [i, { cellWidth: c.titulo === "Motorista" ? 42 : "auto" }])),
     didParseCell: (d) => {
       if (d.section !== "body" || d.row.index >= linhas.length || d.column.index !== idxPagamento) return;
       d.cell.styles.fontStyle = "bold";

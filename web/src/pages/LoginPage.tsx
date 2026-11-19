@@ -110,7 +110,7 @@ export function LoginPage() {
       </div>
 
       <footer className="relative z-10 shrink-0 pb-4 text-center text-[10px] font-medium tracking-wide text-white/35">
-        Inovaflowtec - vers&atilde;o 1.2.3 - 22/10/2026
+        Inovaflowtec - vers&atilde;o 1.6.4 - 19/11/2026
       </footer>
     </main>
   );

@@ -1,6 +1,6 @@
 {
   "name": "grupolobo-web",
-  "version": "1.2.4",
+  "version": "1.6.4",
   "private": true,
   "type": "module",
   "scripts": {

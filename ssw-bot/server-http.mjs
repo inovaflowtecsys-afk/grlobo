@@ -15,7 +15,9 @@ import http from "node:http";
 // 088 (ssw0602, act=RELOAD) nao tem arquivo: a tela devolve os dados como <xml id=xmlsr><rs><r><f0>...</f0>...</r></rs></xml> no proprio HTML.
 
 const PORT = Number(process.env.PORT || 3000);
-const BASE = "https://sistema.ssw.inf.br/bin";
+// O SSW deixou de responder em sistema.ssw.inf.br; o endereco valido e tms.ssw.inf.br (sobrescreva com SSW_BASE se mudar).
+const SITE = (process.env.SSW_BASE || "https://tms.ssw.inf.br").replace(/\/+$/, "");
+const BASE = SITE + "/bin";
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 const need = (n) => { const v = process.env[n]; if (!v) throw new Error(`Variavel ausente: ${n}`); return v; };
 const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -42,7 +44,7 @@ class Sessao {
   cookies = new Map();
   async get(caminho) {
     const r = await fetch(`${BASE}/${caminho}`, {
-      redirect: "follow", headers: { "user-agent": UA, accept: "*/*", "accept-language": "pt-BR,pt;q=0.9", referer: "https://sistema.ssw.inf.br/bin/ssw1440", cookie: [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; ") }, signal: AbortSignal.timeout(60000),
+      redirect: "follow", headers: { "user-agent": UA, accept: "*/*", "accept-language": "pt-BR,pt;q=0.9", referer: BASE + "/ssw1440", cookie: [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; ") }, signal: AbortSignal.timeout(60000),
     });
     return { status: r.status, headers: r.headers, buf: Buffer.from(await r.arrayBuffer()) };
   }
@@ -51,7 +53,7 @@ class Sessao {
     for (let salto = 0; salto < 5; salto++) {
       const r = await fetch(`${BASE}/${prog}`, {
         method: "POST", redirect: "manual",
-        headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": UA, cookie: [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; "), accept: "*/*", "accept-language": "pt-BR,pt;q=0.9", referer: "https://sistema.ssw.inf.br/bin/ssw0422", origin: "https://sistema.ssw.inf.br" },
+        headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": UA, cookie: [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; "), accept: "*/*", "accept-language": "pt-BR,pt;q=0.9", referer: BASE + "/ssw0422", origin: SITE },
         body: corpo, signal: AbortSignal.timeout(60000),
       });
       for (const c of r.headers.getSetCookie?.() || []) { const [kv] = c.split(";"); const i = kv.indexOf("="); if (i > 0) this.cookies.set(kv.slice(0, i).trim(), kv.slice(i + 1).trim()); }

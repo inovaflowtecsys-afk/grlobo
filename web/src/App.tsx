@@ -16,6 +16,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RecuperarSenhaPage } from "./pages/RecuperarSenhaPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { ProfissionaisPage } from "./pages/ProfissionaisPage";
+import { ImportacaoSswPage } from "./pages/ImportacaoSswPage";
+import { AdminRoute } from "./components/layout/AdminRoute";
 
 export function App() {
   return (
@@ -57,6 +59,9 @@ export function App() {
           </Route>
           <Route element={<ModuloRoute modulo="profissionais" />}>
             <Route path="/profissionais" element={<ProfissionaisPage />} />
+          </Route>
+          <Route element={<AdminRoute nome="Importação SSW" />}>
+            <Route path="/importacao-ssw" element={<ImportacaoSswPage />} />
           </Route>
         </Route>
       </Route>

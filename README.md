@@ -1,5 +1,9 @@
 # GrupoLobo — Extração SSW 455 → Supabase
 
+## Versão 1.6.4 — 19/11/2026
+
+- Atualização da versão da aplicação web para 1.6.4.
+
 Processo **separado** da Macklog (serviço, workflow, credenciais e banco próprios), feito a partir do mesmo modelo.
 
 Leva o relatório **455 — Fretes Expedidos/Recebidos (CTRCs)** do SSW para a tabela `public.ssw_455_ctrcs` do Supabase do
@@ -17,7 +21,7 @@ n8n "GrupoLobo - SSW 455 -> Supabase"  (08h, 14h, 19h America/Sao_Paulo)
 
 - Atualização da versão da aplicação web para 1.2.4.
 
-## Versão 1.2.3 — 22/10/2026
+## Versão 1.3.4 — 04/11/2026
 
 - Unificação dos dados do Dashboard e da tela Entregas usando `ctrc_painel`.
 - DPE com regras de agendamento, complementares, substituições e ocorrências 93, 94 e 99.

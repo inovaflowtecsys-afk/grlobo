@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BarChart3, Building2, FileText, Handshake, Radar, Lock, LogOut, Menu, ReceiptText, Route, Truck, UsersRound, X } from "lucide-react";
+import { BarChart3, Building2, FileText, Radar, Lock, LogOut, Menu, ReceiptText, Truck, Upload, UsersRound, X } from "lucide-react";
 import { brand } from "../../lib/brand";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
@@ -12,24 +12,27 @@ import { moduloPorRota } from "../../lib/modulos";
 import { joinUnique } from "../../lib/format";
 
 const navGroups = [
-  { label: "Principal", items: [{ label: "Dashboard", to: "/dashboard", icon: BarChart3 }] },
   {
-    label: "Relatórios",
+    label: "Acesso rápido",
     items: [
+      { label: "Profissionais", to: "/profissionais", icon: UsersRound },
+      { label: "Empresa", to: "/empresa", icon: Building2 },
+      { label: "Importação SSW", to: "/importacao-ssw", icon: Upload },
+      { label: "Faturamento", to: "/faturamento", icon: ReceiptText },
+    ],
+  },
+  {
+    label: "Operação",
+    items: [
+      { label: "Dashboard", to: "/dashboard", icon: BarChart3 },
       { label: "Conhecimentos", to: "/conhecimentos", icon: FileText },
       { label: "Entregas", to: "/entregas", icon: Radar },
-      { label: "Operações", to: "/operacoes", icon: Route },
-      { label: "Comercial", to: "/comercial", icon: Handshake },
-      { label: "Faturamento", to: "/faturamento", icon: ReceiptText },
       { label: "Frete entrega", to: "/frete-entrega", icon: Truck },
     ],
   },
-  { label: "Cadastros", items: [
-      { label: "Empresa", to: "/empresa", icon: Building2 },
-      { label: "Profissionais", to: "/profissionais", icon: UsersRound },
-    ],
-  },
 ];
+
+const freteItem = { label: "Frete entrega", to: "/frete-entrega", icon: Truck };
 
 const routeTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -41,6 +44,7 @@ const routeTitles: Record<string, string> = {
   "/frete-entrega": "Frete entrega",
   "/empresa": "Empresa",
   "/profissionais": "Profissionais",
+  "/importacao-ssw": "Importação SSW",
 };
 
 export function AppShell() {
@@ -53,7 +57,23 @@ export function AppShell() {
   const displayName = profile?.nome || user?.email || "Usuário";
   const filial = profile?.filial ? joinUnique([profile.filial.sigla, profile.filial.nome]) : "";
   const context = [profile?.setor?.nome || profile?.cargo, filial].filter(Boolean).join(" · ");
-  const groups = navGroups;
+  const groups = [...navGroups].reverse().flatMap((group) => {
+    if (group.label.startsWith("Opera")) {
+      return [
+        { label: "", items: group.items.filter((item) => item.to === "/dashboard") },
+        { label: "Opera\u00e7\u00e3o", items: group.items.filter((item) => item.to !== "/dashboard") },
+      ];
+    }
+    if (!group.label.startsWith("Acesso")) return [group];
+    return [
+      { label: "Financeiro", items: group.items.filter((item) => item.to === "/faturamento") },
+      { label: "Gest\u00e3o", items: group.items.filter((item) => item.to !== "/faturamento") },
+    ];
+  }).map((group) => ({
+    ...group,
+    // Importa\u00e7\u00e3o SSW s\u00f3 aparece para administradores (a fun\u00e7\u00e3o do servidor tamb\u00e9m confere o perfil).
+    items: group.items.filter((item) => item.to !== "/importacao-ssw" || isAdmin),
+  }));
 
   async function handleLogout() {
     await logout();
@@ -80,8 +100,8 @@ export function AppShell() {
         <nav className="flex-1 space-y-5 overflow-y-auto px-4 py-5" aria-label="Navegação principal">
           {groups.map((group) => (
             <div key={group.label} className="space-y-1">
-              <p className="px-3 pb-1 text-[11px] font-bold uppercase text-white/35">{group.label}</p>
-                {group.items.filter((item) => !["/operacoes", "/comercial"].includes(item.to)).map((item) => (
+              {group.label ? <p className="px-3 pb-1 text-[11px] font-bold uppercase text-white/35">{group.label}</p> : null}
+                {group.items.map((item) => (
                 (() => {
                   const modulo = moduloPorRota(item.to);
                   const negado = Boolean(modulo) && !podeAcessar(modulo!.chave);
@@ -114,11 +134,42 @@ export function AppShell() {
                   );
                 })()
               ))}
-            </div>
+           </div>
           ))}
+
+             {false && (() => {
+              const modulo = moduloPorRota(freteItem.to);
+              const negado = Boolean(modulo) && !podeAcessar(modulo!.chave);
+              const classes = ({ isActive }: { isActive: boolean }) =>
+                cn(
+                  "flex min-h-11 items-center gap-3 rounded-lg px-4 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white",
+                  isActive && !negado && "bg-brand-primary text-white shadow-[0_12px_30px_rgba(18,67,127,0.45)] hover:bg-brand-primary",
+                  negado && "text-white/40",
+                );
+              return (
+                <NavLink
+                  to={freteItem.to}
+                  onClick={(event) => {
+                    if (negado) {
+                      event.preventDefault();
+                      setBloqueado(freteItem.label);
+                      return;
+                    }
+                    setOpen(false);
+                  }}
+                  className={classes}
+                  aria-disabled={negado || undefined}
+                  title={negado ? "Sem permissão de acesso" : undefined}
+                >
+                  <freteItem.icon className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="flex-1">{freteItem.label}</span>
+                  {negado ? <Lock className="size-3.5 shrink-0" aria-hidden="true" /> : null}
+                </NavLink>
+              );
+            })()}
         </nav>
 
-        <div className="border-t border-white/10 px-5 py-4 text-[10px] font-medium text-white/35">Inovaflowtec - vers&atilde;o 1.2.3 - 22/10/2026</div>
+        <div className="border-t border-white/10 px-5 py-4 text-[10px] font-medium text-white/35">Inovaflowtec - vers&atilde;o 1.6.4 - 19/11/2026</div>
       </aside>
 
       <div className="min-h-0 min-w-0 lg:flex lg:flex-col">
